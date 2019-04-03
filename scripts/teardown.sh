@@ -14,7 +14,6 @@ kubectl delete statefulsets mongod-shard3
 kubectl delete services mongodb-shard3-service
 kubectl delete statefulsets mongod-configdb
 kubectl delete services mongodb-configdb-service
-kubectl delete secret shared-bootstrap-data
 kubectl delete daemonset hostvm-configurer
 sleep 3
 

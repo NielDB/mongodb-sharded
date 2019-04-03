@@ -87,7 +87,7 @@ done
 
 for ((rs=1; rs<=$SHARD_REPLICA_SET; rs++)) do
   echo -n "  "
-  until kubectl --v=0 exec mongod-shard$rs-2 -c mongod-shard1-container -- mongo --quiet --eval 'db.getMongo()'; do
+  until kubectl --v=0 exec mongod-shard$rs-2 -c mongod-shard$rs-container -- mongo --quiet --eval 'db.getMongo()'; do
       sleep 5
       echo -n "  "
   done

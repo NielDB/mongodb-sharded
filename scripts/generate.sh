@@ -14,41 +14,6 @@ kubectl apply -f ../resources/hostvm-node-configurer-daemonset.yaml
 kubectl apply -f ../resources/gce-ssd-storageclass.yaml
 
 
-# Register GCE Fast SSD persistent disks and then create the persistent disks 
-
-# echo "Creating GCE disks"
-# for i in 1 2 3
-# do
-#     # 4GB disks    
-#     gcloud compute disks create --size 4GB --type pd-ssd pd-ssd-disk-4g-$i --zone=europe-west1-b
-# done
-# for i in 1 2 3 4 5 6 7 8 9
-# do
-#     # 8 GB disks
-#     gcloud compute disks create --size 8GB --type pd-ssd pd-ssd-disk-8g-$i --zone=europe-west1-b
-# done
-# sleep 3
-
-
-# Create persistent volumes using disks that were created above
-
-# echo "Creating GKE Persistent Volumes"
-# for i in 1 2 3
-# do
-#     # Replace text stating volume number + size of disk (set to 4)
-#     sed -e "s/INST/${i}/g; s/SIZE/4/g" ../resources/xfs-gce-ssd-persistentvolume.yaml > /tmp/xfs-gce-ssd-persistentvolume.yaml
-#     kubectl apply -f /tmp/xfs-gce-ssd-persistentvolume.yaml
-# done
-# for i in 1 2 3 4 5 6 7 8 9
-# do
-#     # Replace text stating volume number + size of disk (set to 8)
-#     sed -e "s/INST/${i}/g; s/SIZE/8/g" ../resources/xfs-gce-ssd-persistentvolume.yaml > /tmp/xfs-gce-ssd-persistentvolume.yaml
-#     kubectl apply -f /tmp/xfs-gce-ssd-persistentvolume.yaml
-# done
-# rm /tmp/xfs-gce-ssd-persistentvolume.yaml
-# sleep 3
-
-
 # Deploy a MongoDB ConfigDB Service ("Config Server Replica Set") using a Kubernetes StatefulSet
 echo "Deploying GKE StatefulSet & Service for MongoDB Config Server Replica Set"
 kubectl apply -f ../resources/mongodb-configdb-service.yaml
@@ -169,9 +134,35 @@ kubectl exec mongos-router-0 -c mongos-container -- mongo --eval "db.getSiblingD
 echo
 
 
+# Create Mongodb-Prometheus-Exporter User
+kubectl exec mongos-router-0 -c mongos-container -- mongo --eval "db.getSiblingDB('admin').createUser({user: 'mongodb_exporter',pwd: 's3cr3tpassw0rd',roles:[{role:'clusterMonitor',db:'admin'},{ role: 'read', db: 'local' }],mechanisms:['SCRAM-SHA-1']})"
+
+# Install helm
+./helm.sh
+
+TILLERSTATUS=2
+
+while [[ ${TILLERSTATUS} != "1" ]]
+do
+
+  if [ ${TILLERSTATUS} = 2 ]
+  then
+    printf "\nWaiting for tiller\n"
+  fi
+
+  TILLERSTATUS="$(kubectl get deployment tiller-deploy -n kube-system | tail -n +2 | awk '{print $5}')"
+
+done
+printf "\nTiller ready\n"
+
+# Install Prometheus Operator
+helm install -f ../monitoring/prometheus-operator-chart.yaml stable/prometheus-operator --name prometheus-operator
+
+# Install MongoDB prometheus exporter
+helm install -f ../monitoring/mongodb-exporter-chart.yaml --name prometheus-mongodb-exporter stable/prometheus-mongodb-exporter
+
 # Print Summary State
 kubectl get persistentvolumes
 echo
 kubectl get all 
 echo
-

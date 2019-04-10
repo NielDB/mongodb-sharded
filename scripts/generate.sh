@@ -99,6 +99,12 @@ echo "...initialisation of the MongoDB Replica Sets completed"
 echo
 
 
+# Set read preference of primary of each replicaset
+for ((rs=1; rs<=$SHARD_REPLICA_SET; rs++)) do
+   kubectl exec mongod-shard$rs-0 -c mongod-shard$rs-container -- mongo --quiet --eval 'db.getMongo().setReadPref("nearest");'
+done
+
+
 # Wait for the mongos to have started properly
 echo "Waiting for the first mongos to come up (`date`)..."
 echo " (IGNORE any reported not found & connection errors)"

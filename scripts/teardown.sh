@@ -22,23 +22,11 @@ kubectl delete persistentvolumeclaims -l tier=maindb
 kubectl delete persistentvolumeclaims -l tier=configdb
 sleep 3
 
-# Delete persistent volumes
-for i in 1 2 3
-do
-    kubectl delete persistentvolumes data-volume-4g-$i
-done
-for i in 1 2 3 4 5 6 7 8 9
-do
-    kubectl delete persistentvolumes data-volume-8g-$i
-done
-sleep 20
+# Delete helm releases
+helm ls --all --short | xargs -L1 helm delete --purge
 
-# Delete GCE disks
-for i in 1 2 3
-do
-    gcloud -q compute disks delete pd-ssd-disk-4g-$i --zone=europe-west1-b
-done
-for i in 1 2 3 4 5 6 7 8 9
-do
-    gcloud -q compute disks delete pd-ssd-disk-8g-$i --zone=europe-west1-b
-done
+# Cleanup prometheus operator
+kubectl delete crd prometheuses.monitoring.coreos.com
+kubectl delete crd prometheusrules.monitoring.coreos.com
+kubectl delete crd servicemonitors.monitoring.coreos.com
+kubectl delete crd alertmanagers.monitoring.coreos.com

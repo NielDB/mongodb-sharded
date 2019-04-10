@@ -74,7 +74,7 @@ kubectl exec mongod-configdb-0 -c mongod-configdb-container -- mongo --eval 'rs.
 for (( rs=1; rs<=$SHARD_REPLICA_SET; rs++ )) do
   ID=0
 
-  SUBSTRING="{_id: \"Shard${rs}RepSet\", version: 1, members: [ {_id: 0, host: \"mongod-shard$rs-0.mongodb-shard$rs-service.default.svc.cluster.local:27017\"}, {_id: 1, host: \"mongod-shard$rs-1.mongodb-shard$rs-service.default.svc.cluster.local:27017\"}, {_id: 2, host: \"mongod-shard$rs-2.mongodb-shard$rs-service.default.svc.cluster.local:27017\"} ]}"
+  SUBSTRING="{_id: \"Shard${rs}RepSet\", version: 1, members: [ {_id: 0, host: \"mongod-shard$rs-0.mongodb-shard$rs-service.default.svc.cluster.local:27017\"}, {_id: 1, host: \"mongod-shard$rs-1.mongodb-shard$rs-service.default.svc.cluster.local:27017\"}, {_id: 2, host: \"mongod-shard$rs-2.mongodb-shard$rs-service.default.svc.cluster.local:27017\", arbiterOnly: true} ]}"
 
   DYNAMIC_STRING="kubectl exec mongod-shard$rs-0 -c mongod-shard$rs-container -- mongo --eval 'rs.initiate($SUBSTRING);'"
   
@@ -156,10 +156,13 @@ done
 printf "\nTiller ready\n"
 
 # Install Prometheus Operator
-helm install -f ../monitoring/prometheus-operator-chart.yaml stable/prometheus-operator --name prometheus-operator
+helm install -f ../resources/helm/prometheus-operator-chart.yaml stable/prometheus-operator --name prometheus-operator --namespace monitoring
 
 # Install MongoDB prometheus exporter
-helm install -f ../monitoring/mongodb-exporter-chart.yaml --name prometheus-mongodb-exporter stable/prometheus-mongodb-exporter
+helm install -f ../resources/helm/mongodb-exporter-chart.yaml --name prometheus-mongodb-exporter stable/prometheus-mongodb-exporter
+
+# Expose Grafana service
+kubectl patch svc prometheus-operator-grafana -p '{"spec": {"type": "LoadBalancer"}}' --namespace monitoring
 
 # Print Summary State
 kubectl get persistentvolumes

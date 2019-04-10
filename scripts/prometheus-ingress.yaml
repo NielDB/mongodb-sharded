@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: prometheus-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+  - host:
+    http:
+      port: 80
+      paths:
+      - path: /prometheus
+        backend:
+          serviceName: prometheus-operator-prometheus
+          servicePort: 9090

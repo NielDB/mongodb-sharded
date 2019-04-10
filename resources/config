@@ -1,7 +1,5 @@
 #!/bin/bash
 #Main configuration 
-NODE_PER_REPLICA=3
 SHARD_REPLICA_SET=3
-ROUTER_NODES=2
 ADMIN_USER="main_admin"
 ADMIN_PASSWORD="abc123"

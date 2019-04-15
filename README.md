@@ -1,6 +1,6 @@
-# MongoDB Sharded Cluster Deployment Demo for Kubernetes on GKE
+# MongoDB Sharded Cluster for Kubernetes on GKE
 
-An example project demonstrating the deployment of a MongoDB Sharded Cluster via Kubernetes on the Google Kubernetes Engine (GKE), using Kubernetes' feature StatefulSet. Contains example Kubernetes YAML resource files (in the 'resource' folder) and associated Kubernetes based Bash scripts (in the 'scripts' folder) to configure the environment and deploy a MongoDB Replica Set.
+A project demonstrating the deployment of a MongoDB Sharded Cluster via Kubernetes on the Google Kubernetes Engine (GKE), using Kubernetes' feature StatefulSet. Contains example Kubernetes YAML resource files (in the 'resource' folder) and associated Kubernetes based Bash scripts (in the 'scripts' folder) to configure the environment and deploy a MongoDB Replica Set.
 
 For further background information on what these scripts and resource files do, plus general information about running MongoDB with Kubernetes, see: [http://k8smongodb.net/](http://k8smongodb.net/)
 
@@ -72,19 +72,9 @@ Run the following script to undeploy the MongoDB Services & StatefulSets plus re
     
 It is also worth checking in the [Google Cloud Platform Console](https://console.cloud.google.com), to ensure all resources have been removed correctly.
 
+## 2 Monitoring
 
-## 2 Factors Addressed By This Project
-
-* Deployment of a MongoDB on the Google Kubernetes Engine
-* Use of Kubernetes StatefulSets and PersistentVolumeClaims to ensure data is not lost when containers are recycled
-* Proper configuration of a MongoDB Sharded Cluster for Scalability with each Shard being a Replica Set for full resiliency
-* Securing MongoDB by default for new deployments
-* Leveraging XFS filesystem for data file storage to improve performance
-* Disabling Transparent Huge Pages to improve performance
-* Disabling NUMA to improve performance
-* Controlling CPU & RAM Resource Allocation
-* Correctly configuring WiredTiger Cache Size in containers
-* Controlling Anti-Affinity for Mongod Replicas to avoid a Single Point of Failure
+This project uses helm to install the prometheus operator stack, containing Prometheus, grafana & mongodb-prometheus-exporter. After generating the cluster, the grafana service will be exposed. A custom grafana dashboard for MongoDB is available in the `resources/dashboards` folder.
 
 ## 3 Load Testing
 

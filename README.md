@@ -86,3 +86,18 @@ It is also worth checking in the [Google Cloud Platform Console](https://console
 * Correctly configuring WiredTiger Cache Size in containers
 * Controlling Anti-Affinity for Mongod Replicas to avoid a Single Point of Failure
 
+## 3 Load Testing
+
+The loadtesting folder contains 2 docker projects to help with load testing.
+
+* Pets application (springboot app)
+* Jmeter project using rest api calls for supplying load
+
+### Pets
+
+To use the pets application, set the correct connection string in `pets-app/src/main/resources/application.properties`.
+Use maven to package the application to a .jar file with `mvn package`. Then use docker to build the image when maven is done packaging: `docker build -t pets .`.
+
+### Jmeter
+
+To configure jmeter, set the ip address of the pets app in the `config` file. Then use docker to build the image: `docker build -t jmeter .`.

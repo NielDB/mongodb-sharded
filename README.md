@@ -1,6 +1,6 @@
-# MongoDB Sharded Cluster Deployment Demo for Kubernetes on GKE
+# MongoDB Sharded Cluster for Kubernetes on GKE
 
-An example project demonstrating the deployment of a MongoDB Sharded Cluster via Kubernetes on the Google Kubernetes Engine (GKE), using Kubernetes' feature StatefulSet. Contains example Kubernetes YAML resource files (in the 'resource' folder) and associated Kubernetes based Bash scripts (in the 'scripts' folder) to configure the environment and deploy a MongoDB Replica Set.
+A project demonstrating the deployment of a MongoDB Sharded Cluster via Kubernetes on the Google Kubernetes Engine (GKE), using Kubernetes' feature StatefulSet. Contains example Kubernetes YAML resource files (in the 'resource' folder), Terraform infrastructure files (in the 'terraform' folder) and associated Kubernetes based Bash scripts (in the 'scripts' folder) to configure the environment and deploy a MongoDB Replica Set. There are also two projects to load test the cluster in the 'loadtesting' folder (explained in '3 Load Testing').
 
 For further background information on what these scripts and resource files do, plus general information about running MongoDB with Kubernetes, see: [http://k8smongodb.net/](http://k8smongodb.net/)
 
@@ -26,6 +26,8 @@ Ensure the following dependencies are already fulfilled on your host Linux/Windo
 
 ### 1.2 Deployment
 
+To provision the hardware, you can create your own Kubernetes cluster on GKE or use one of the included files: `terraform/gkecluster.tf` or `scripts/createCluster.sh`.
+
 Using a command-line terminal/shell, execute the following (first change the password variable in the script "generate.sh", if appropriate):
 
     $ cd scripts
@@ -33,9 +35,11 @@ Using a command-line terminal/shell, execute the following (first change the pas
     
 This takes a few minutes to complete. Once completed, you should have a MongoDB Sharded Cluster initialised, secured and running in some Kubernetes StatefulSets. The executed bash script will have created the following resources:
 
-* 1x Config Server Replica Set containing 3x replicas (k8s deployment type: "StatefulSet")
-* 3x Shards with each Shard being a Replica Set containing 3x replicas (k8s deployment type: "StatefulSet")
-* 2x Mongos Routers (k8s deployment type: "StatefulSet")
+* 3x Config Server Replica Set containing 3x replicas (k8s deployment type: "StatefulSet")
+* 3x Shards with each Shard being a Replica Set containing 1x Primary, 1x Secondary and 1x Arbiter (k8s deployment type: "StatefulSet")
+* 2x Mongos Routers, scaling with a hpa up to x30 (k8s deployment type: "StatefulSet")
+
+The amount of shards and other parameters can be configured in `resources/config`.
 
 You can view the list of Pods that contain these MongoDB resources, by running the following:
 
@@ -50,17 +54,97 @@ The running mongos routers will be accessible to any "app tier" containers, that
 
 ### 1.3 Test Sharding Your Own Collection
 
-To test that the sharded cluster is working properly, connect to the container running the first "mongos" router, then use the Mongo Shell to authenticate, enable sharding on a specific collection, add some test data to this collection and then view the status of the Sharded cluster and collection:
+To test that the sharded cluster is working properly, a test script is included at `scripts/configureDB.sh`. This script will create a sharded database called "my-database" along with a sharded collection called "pet".
+
+Connect to the "mongos" router, then use the Mongo Shell to authenticate, enable sharding on a specific collection, add some test data to this collection and then view the status of the Sharded cluster and collection:
 
     $ kubectl exec -it mongos-router-0 -c mongos-container bash
     $ mongo
     > db.getSiblingDB('admin').auth("main_admin", "abc123");
-    > sh.enableSharding("test");
-    > sh.shardCollection("test.testcoll", {"myfield": 1});
-    > use test;
-    > db.testcoll.insert({"myfield": "a", "otherfield": "b"});
-    > db.testcoll.find();
+    > sh.enableSharding("my-database");
+    > db.pet.ensureIndex({_id : "hashed"});
+    > sh.shardCollection("my-database.pet", {"_id" : "hashed"});
+    > use my-database;
+    > db.pet.insert({"name": "Frieda", "species": "Dog", "breed": "Scottish Terrier"});
+    > db.pet.find();
     > sh.status();
+    > db.stats();
+
+If everything is working properly, the objects should be scattered across all shards.
+    
+```
+mongos> db.stats()
+{
+	"raw" : {
+		"Shard3RepSet/mongod-shard3-0.mongodb-shard3-service.default.svc.cluster.local:27017,mongod-shard3-1.mongodb-shard3-service.default.svc.cluster.local:27017" : {
+			"db" : "my-database",
+			"collections" : 1,
+			"views" : 0,
+			"objects" : 1935,
+			"avgObjSize" : 122.03617571059432,
+			"dataSize" : 236140,
+			"storageSize" : 73728,
+			"numExtents" : 0,
+			"indexes" : 2,
+			"indexSize" : 172032,
+			"fsUsedSize" : 4796694528,
+			"fsTotalSize" : 101241290752,
+			"ok" : 1
+		},
+		"Shard1RepSet/mongod-shard1-0.mongodb-shard1-service.default.svc.cluster.local:27017,mongod-shard1-1.mongodb-shard1-service.default.svc.cluster.local:27017" : {
+			"db" : "my-database",
+			"collections" : 1,
+			"views" : 0,
+			"objects" : 1904,
+			"avgObjSize" : 122.02100840336135,
+			"dataSize" : 232328,
+			"storageSize" : 73728,
+			"numExtents" : 0,
+			"indexes" : 2,
+			"indexSize" : 167936,
+			"fsUsedSize" : 5040947200,
+			"fsTotalSize" : 101241290752,
+			"ok" : 1
+		},
+		"Shard2RepSet/mongod-shard2-0.mongodb-shard2-service.default.svc.cluster.local:27017,mongod-shard2-1.mongodb-shard2-service.default.svc.cluster.local:27017" : {
+			"db" : "my-database",
+			"collections" : 1,
+			"views" : 0,
+			"objects" : 1886,
+			"avgObjSize" : 122.01060445387063,
+			"dataSize" : 230112,
+			"storageSize" : 73728,
+			"numExtents" : 0,
+			"indexes" : 2,
+			"indexSize" : 167936,
+			"fsUsedSize" : 4569104384,
+			"fsTotalSize" : 101241290752,
+			"ok" : 1
+		}
+	},
+	"objects" : 5725,
+	"avgObjSize" : 122,
+	"dataSize" : 698580,
+	"storageSize" : 221184,
+	"numExtents" : 0,
+	"indexes" : 6,
+	"indexSize" : 507904,
+	"fileSize" : 0,
+	"extentFreeList" : {
+		"num" : 0,
+		"totalSize" : 0
+	},
+	"ok" : 1,
+	"operationTime" : Timestamp(1555589120, 1),
+	"$clusterTime" : {
+		"clusterTime" : Timestamp(1555589120, 1),
+		"signature" : {
+			"hash" : BinData(0,"AAAAAAAAAAAAAAAAAAAAAAAAAAA="),
+			"keyId" : NumberLong(0)
+		}
+	}
+}
+```
 
 ### 1.4 Undeploying & Cleaning Down the Kubernetes Environment
 
@@ -72,17 +156,22 @@ Run the following script to undeploy the MongoDB Services & StatefulSets plus re
     
 It is also worth checking in the [Google Cloud Platform Console](https://console.cloud.google.com), to ensure all resources have been removed correctly.
 
+## 2 Monitoring
 
-## 2 Factors Addressed By This Project
+This project uses helm to install the prometheus operator stack, containing Prometheus, grafana & mongodb-prometheus-exporter. After generating the cluster, the grafana service will be exposed. A custom grafana dashboard for MongoDB is available in the `resources/dashboards` folder.
 
-* Deployment of a MongoDB on the Google Kubernetes Engine
-* Use of Kubernetes StatefulSets and PersistentVolumeClaims to ensure data is not lost when containers are recycled
-* Proper configuration of a MongoDB Sharded Cluster for Scalability with each Shard being a Replica Set for full resiliency
-* Securing MongoDB by default for new deployments
-* Leveraging XFS filesystem for data file storage to improve performance
-* Disabling Transparent Huge Pages to improve performance
-* Disabling NUMA to improve performance
-* Controlling CPU & RAM Resource Allocation
-* Correctly configuring WiredTiger Cache Size in containers
-* Controlling Anti-Affinity for Mongod Replicas to avoid a Single Point of Failure
+## 3 Load Testing
 
+The loadtesting folder contains 2 docker projects to help with load testing.
+
+* Pets application (springboot app)
+* Jmeter project using rest api calls for supplying load
+
+### 3.1 Pets
+
+To use the pets application, set the correct connection string in `pets-app/src/main/resources/application.properties`.
+Use maven to package the application to a .jar file with `mvn package`. Then use docker to build the image when maven is done packaging: `docker build -t pets .`.
+
+### 3.2 Jmeter
+
+To configure jmeter, set the ip address of the pets app in the `config` file. Then use docker to build the image: `docker build -t jmeter .`.

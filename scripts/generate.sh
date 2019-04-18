@@ -27,8 +27,7 @@ for ((rs=1; rs<=$SHARD_REPLICA_SET; rs++)) do
   sed -e "s/shardX/shard${rs}/g; s/ShardX/Shard${rs}/g" ../resources/mongodb-maindb-service.yaml > /tmp/mongodb-maindb-service.yaml
   kubectl apply -f /tmp/mongodb-maindb-service.yaml
 
-done
-
+done 
 
 rm /tmp/mongodb-maindb-service.yaml
 
@@ -121,7 +120,6 @@ echo
 echo "Configuring ConfigDB to be aware of the Shards"
 
 POD_NAME=$(kubectl get pods | grep "router" | awk '{print $1;}')
-# Moet maar op 1 router uitgevoerd worden?
 
 for ((rs=1; rs<=$SHARD_REPLICA_SET; rs++)) do
 
@@ -134,6 +132,10 @@ done
 sleep 3
 
 
+# Create horizontal pod autoscalers
+kubectl apply -f ../resources/mongos-router-hpa.yaml
+
+
 # Create the Admin User (this will automatically disable the localhost exception)
 echo "Creating user: '${ADMIN_USER}'"
 kubectl exec mongos-router-0 -c mongos-container -- mongo --eval "db.getSiblingDB('admin').createUser({user:'${ADMIN_USER}',pwd:'${ADMIN_PASSWORD}',roles:[{role:'root',db:'admin'}]});"
@@ -142,6 +144,7 @@ echo
 
 # Create Mongodb-Prometheus-Exporter User
 kubectl exec mongos-router-0 -c mongos-container -- mongo --eval "db.getSiblingDB('admin').createUser({user: 'mongodb_exporter',pwd: 's3cr3tpassw0rd',roles:[{role:'clusterMonitor',db:'admin'},{ role: 'read', db: 'local' }],mechanisms:['SCRAM-SHA-1']})"
+
 
 # Install helm
 ./helm.sh
@@ -161,14 +164,18 @@ do
 done
 printf "\nTiller ready\n"
 
+
 # Install Prometheus Operator
 helm install -f ../resources/helm/prometheus-operator-chart.yaml stable/prometheus-operator --name prometheus-operator --namespace monitoring
+
 
 # Install MongoDB prometheus exporter
 helm install -f ../resources/helm/mongodb-exporter-chart.yaml --name prometheus-mongodb-exporter stable/prometheus-mongodb-exporter
 
+
 # Expose Grafana service
 kubectl patch svc prometheus-operator-grafana -p '{"spec": {"type": "LoadBalancer"}}' --namespace monitoring
+
 
 # Print Summary State
 kubectl get persistentvolumes

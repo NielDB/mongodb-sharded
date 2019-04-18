@@ -11,6 +11,7 @@ spec:
   selector:
     role: mongos-router
   type: LoadBalancer
+  loadBalancerIP: "34.76.113.128"
 ---
 apiVersion: apps/v1beta1
 kind: StatefulSet

@@ -64,10 +64,10 @@ To test that the sharded cluster is working properly, connect to the "mongos" ro
     > sh.status();
     > db.stats();
 
-If everything is working properly, the objects should be scattered over all shards.
+If everything is working properly, the objects should be scattered across all the shards.
     
 ```
-    mongos> db.stats()
+mongos> db.stats()
 {
 	"raw" : {
 		"Shard3RepSet/mongod-shard3-0.mongodb-shard3-service.default.svc.cluster.local:27017,mongod-shard3-1.mongodb-shard3-service.default.svc.cluster.local:27017" : {

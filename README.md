@@ -26,6 +26,8 @@ Ensure the following dependencies are already fulfilled on your host Linux/Windo
 
 ### 1.2 Deployment
 
+To provision the hardware, you can create your own Kubernetes cluster on GKE or use one of the included files: `terraform/gkecluster.tf` or `scripts/createCluster.sh`.
+
 Using a command-line terminal/shell, execute the following (first change the password variable in the script "generate.sh", if appropriate):
 
     $ cd scripts
@@ -33,9 +35,11 @@ Using a command-line terminal/shell, execute the following (first change the pas
     
 This takes a few minutes to complete. Once completed, you should have a MongoDB Sharded Cluster initialised, secured and running in some Kubernetes StatefulSets. The executed bash script will have created the following resources:
 
-* 1x Config Server Replica Set containing 3x replicas (k8s deployment type: "StatefulSet")
-* 3x Shards with each Shard being a Replica Set containing 3x replicas (k8s deployment type: "StatefulSet")
-* 2x Mongos Routers (k8s deployment type: "StatefulSet")
+* 3x Config Server Replica Set containing 3x replicas (k8s deployment type: "StatefulSet")
+* 3x Shards with each Shard being a Replica Set containing 1x Primary, 1x Secondary and 1x Arbiter (k8s deployment type: "StatefulSet")
+* 2x Mongos Routers, scaling with a hpa up to x30 (k8s deployment type: "StatefulSet")
+
+The amount of shards and other parameters can be configured in `resources/config`.
 
 You can view the list of Pods that contain these MongoDB resources, by running the following:
 
@@ -50,7 +54,9 @@ The running mongos routers will be accessible to any "app tier" containers, that
 
 ### 1.3 Test Sharding Your Own Collection
 
-To test that the sharded cluster is working properly, connect to the "mongos" router, then use the Mongo Shell to authenticate, enable sharding on a specific collection, add some test data to this collection and then view the status of the Sharded cluster and collection:
+To test that the sharded cluster is working properly, a test script is included at `scripts/configureDB.sh`. This script will create a sharded database called "my-database" along with a sharded collection called "pet".
+
+Connect to the "mongos" router, then use the Mongo Shell to authenticate, enable sharding on a specific collection, add some test data to this collection and then view the status of the Sharded cluster and collection:
 
     $ kubectl exec -it mongos-router-0 -c mongos-container bash
     $ mongo
@@ -64,7 +70,7 @@ To test that the sharded cluster is working properly, connect to the "mongos" ro
     > sh.status();
     > db.stats();
 
-If everything is working properly, the objects should be scattered across all the shards.
+If everything is working properly, the objects should be scattered across all shards.
     
 ```
 mongos> db.stats()
@@ -161,11 +167,11 @@ The loadtesting folder contains 2 docker projects to help with load testing.
 * Pets application (springboot app)
 * Jmeter project using rest api calls for supplying load
 
-### Pets
+### 3.1 Pets
 
 To use the pets application, set the correct connection string in `pets-app/src/main/resources/application.properties`.
 Use maven to package the application to a .jar file with `mvn package`. Then use docker to build the image when maven is done packaging: `docker build -t pets .`.
 
-### Jmeter
+### 3.2 Jmeter
 
 To configure jmeter, set the ip address of the pets app in the `config` file. Then use docker to build the image: `docker build -t jmeter .`.

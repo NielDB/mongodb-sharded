@@ -50,17 +50,95 @@ The running mongos routers will be accessible to any "app tier" containers, that
 
 ### 1.3 Test Sharding Your Own Collection
 
-To test that the sharded cluster is working properly, connect to the container running the first "mongos" router, then use the Mongo Shell to authenticate, enable sharding on a specific collection, add some test data to this collection and then view the status of the Sharded cluster and collection:
+To test that the sharded cluster is working properly, connect to the "mongos" router, then use the Mongo Shell to authenticate, enable sharding on a specific collection, add some test data to this collection and then view the status of the Sharded cluster and collection:
 
     $ kubectl exec -it mongos-router-0 -c mongos-container bash
     $ mongo
     > db.getSiblingDB('admin').auth("main_admin", "abc123");
-    > sh.enableSharding("test");
-    > sh.shardCollection("test.testcoll", {"myfield": 1});
-    > use test;
-    > db.testcoll.insert({"myfield": "a", "otherfield": "b"});
-    > db.testcoll.find();
+    > sh.enableSharding("my-database");
+    > db.pet.ensureIndex({_id : "hashed"});
+    > sh.shardCollection("my-database.pet", {"_id" : "hashed"});
+    > use my-database;
+    > db.pet.insert({"name": "Frieda", "species": "Dog", "breed": "Scottish Terrier"});
+    > db.pet.find();
     > sh.status();
+    > db.stats();
+
+If everything is working properly, the objects should be scattered over all shards.
+    
+```
+    mongos> db.stats()
+{
+	"raw" : {
+		"Shard3RepSet/mongod-shard3-0.mongodb-shard3-service.default.svc.cluster.local:27017,mongod-shard3-1.mongodb-shard3-service.default.svc.cluster.local:27017" : {
+			"db" : "my-database",
+			"collections" : 1,
+			"views" : 0,
+			"objects" : 1935,
+			"avgObjSize" : 122.03617571059432,
+			"dataSize" : 236140,
+			"storageSize" : 73728,
+			"numExtents" : 0,
+			"indexes" : 2,
+			"indexSize" : 172032,
+			"fsUsedSize" : 4796694528,
+			"fsTotalSize" : 101241290752,
+			"ok" : 1
+		},
+		"Shard1RepSet/mongod-shard1-0.mongodb-shard1-service.default.svc.cluster.local:27017,mongod-shard1-1.mongodb-shard1-service.default.svc.cluster.local:27017" : {
+			"db" : "my-database",
+			"collections" : 1,
+			"views" : 0,
+			"objects" : 1904,
+			"avgObjSize" : 122.02100840336135,
+			"dataSize" : 232328,
+			"storageSize" : 73728,
+			"numExtents" : 0,
+			"indexes" : 2,
+			"indexSize" : 167936,
+			"fsUsedSize" : 5040947200,
+			"fsTotalSize" : 101241290752,
+			"ok" : 1
+		},
+		"Shard2RepSet/mongod-shard2-0.mongodb-shard2-service.default.svc.cluster.local:27017,mongod-shard2-1.mongodb-shard2-service.default.svc.cluster.local:27017" : {
+			"db" : "my-database",
+			"collections" : 1,
+			"views" : 0,
+			"objects" : 1886,
+			"avgObjSize" : 122.01060445387063,
+			"dataSize" : 230112,
+			"storageSize" : 73728,
+			"numExtents" : 0,
+			"indexes" : 2,
+			"indexSize" : 167936,
+			"fsUsedSize" : 4569104384,
+			"fsTotalSize" : 101241290752,
+			"ok" : 1
+		}
+	},
+	"objects" : 5725,
+	"avgObjSize" : 122,
+	"dataSize" : 698580,
+	"storageSize" : 221184,
+	"numExtents" : 0,
+	"indexes" : 6,
+	"indexSize" : 507904,
+	"fileSize" : 0,
+	"extentFreeList" : {
+		"num" : 0,
+		"totalSize" : 0
+	},
+	"ok" : 1,
+	"operationTime" : Timestamp(1555589120, 1),
+	"$clusterTime" : {
+		"clusterTime" : Timestamp(1555589120, 1),
+		"signature" : {
+			"hash" : BinData(0,"AAAAAAAAAAAAAAAAAAAAAAAAAAA="),
+			"keyId" : NumberLong(0)
+		}
+	}
+}
+```
 
 ### 1.4 Undeploying & Cleaning Down the Kubernetes Environment
 

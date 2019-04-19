@@ -174,12 +174,18 @@ The loadtesting folder contains 2 docker projects to help with load testing.
 ### 3.1 Pets
 
 To build the pets application, set the correct connection string in `pets-app/src/main/resources/application.properties`.
-Use maven to package the application to a .jar file with `mvn package`. Then use Docker to build the image when maven is done packaging: `docker build -t pets .`.
+Use maven to package the application to a .jar file with `mvn package`. Then use Docker to build the image when maven is done packaging:
+
+    $ docker build -t pets .
+
 
 When running the application, it will connect to the database and collection that was configured in the supplied connection string. Then you can use Postman or Jmeter to send POST/GET/PUT/DELETE calls to the application.
 
 ### 3.2 Jmeter
 
-To build the jmeter image, set the ip address of the pets app in the `jmeter-docker/scripts/config` file. Then use Docker to build the image: `docker build -t jmeter .`.
+To build the jmeter image, set the ip address of the pets app in the `jmeter-docker/scripts/config` file. Then use Docker to build the image:
+
+    $ docker build -t jmeter .
+
 
 When running this image, it will send POST/GET/PUT/DELETE calls in an infinite loop (at 300 threads) to the ip adress which was supplied in the config file.

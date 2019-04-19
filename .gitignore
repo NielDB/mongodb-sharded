@@ -2,3 +2,4 @@
 terraform/creds/*
 *.tfstate
 *.tfstate.*
+loadtesting/pets-docker/pets-app/target

@@ -1,2 +1,3 @@
-# Google cloud api key
+# Untracked files
 terraform/creds/*
+terraform/.terraform.tf*

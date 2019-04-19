@@ -26,16 +26,18 @@ Ensure the following dependencies are already fulfilled on your host Linux/Windo
 
 ### 1.2 Deployment
 
-To provision the hardware, you can create your own Kubernetes cluster on GKE or use one of the included files: `terraform/gkecluster.tf` or `scripts/createCluster.sh`.
+To build the infrastructure, you can create your own Kubernetes cluster on GKE or use one of the included files: `terraform/gkecluster.tf` or `scripts/createCluster.sh`. Edit the one of the according files to your preferences.
 
-Using a command-line terminal/shell, execute the following (first change the password variable in the script "generate.sh", if appropriate):
+To use terraform, you should supply a Google Cloud service account key at `terraform/creds/serviceaccount.json`.
+
+To provision the cluster, use a command-line terminal/shell and execute the following (first change the variables in the file "resources/config", if appropriate):
 
     $ cd scripts
     $ ./generate.sh
     
 This takes a few minutes to complete. Once completed, you should have a MongoDB Sharded Cluster initialised, secured and running in some Kubernetes StatefulSets. The executed bash script will have created the following resources:
 
-* 3x Config Server Replica Set containing 3x replicas (k8s deployment type: "StatefulSet")
+* 3x Replicas of a Config Server Replica Set (k8s deployment type: "StatefulSet")
 * 3x Shards with each Shard being a Replica Set containing 1x Primary, 1x Secondary and 1x Arbiter (k8s deployment type: "StatefulSet")
 * 2x Mongos Routers, scaling with a hpa up to x30 (k8s deployment type: "StatefulSet")
 
@@ -54,9 +56,9 @@ The running mongos routers will be accessible to any "app tier" containers, that
 
 ### 1.3 Test Sharding Your Own Collection
 
-To test that the sharded cluster is working properly, a test script is included at `scripts/configureDB.sh`. This script will create a sharded database called "my-database" along with a sharded collection called "pet".
+To test that the sharded cluster is working properly, a test script is included at `scripts/configureDB.sh`. This script will create a sharded database called "my-database" along with a sharded collection called "pet" (also see part 3 Load Testing).
 
-Connect to the "mongos" router, then use the Mongo Shell to authenticate, enable sharding on a specific collection, add some test data to this collection and then view the status of the Sharded cluster and collection:
+Alternatively, you can do this manually by connecting to a "mongos" router, then use the Mongo Shell to authenticate, enable sharding on a specific collection, add some test data to this collection and then view the status of the Sharded cluster and collection:
 
     $ kubectl exec -it mongos-router-0 -c mongos-container bash
     $ mongo
@@ -160,6 +162,8 @@ It is also worth checking in the [Google Cloud Platform Console](https://console
 
 This project uses helm to install the prometheus operator stack, containing Prometheus, grafana & mongodb-prometheus-exporter. After generating the cluster, the grafana service will be exposed. A custom grafana dashboard for MongoDB is available in the `resources/dashboards` folder.
 
+The Prometheus-operator stack and Prometheus-MongoDB-exporter can be configured in the HELM charts located under `resources/helm`.
+
 ## 3 Load Testing
 
 The loadtesting folder contains 2 docker projects to help with load testing.
@@ -169,9 +173,13 @@ The loadtesting folder contains 2 docker projects to help with load testing.
 
 ### 3.1 Pets
 
-To use the pets application, set the correct connection string in `pets-app/src/main/resources/application.properties`.
-Use maven to package the application to a .jar file with `mvn package`. Then use docker to build the image when maven is done packaging: `docker build -t pets .`.
+To build the pets application, set the correct connection string in `pets-app/src/main/resources/application.properties`.
+Use maven to package the application to a .jar file with `mvn package`. Then use Docker to build the image when maven is done packaging: `docker build -t pets .`.
+
+When running the application, it will connect to the database and collection that was configured in the supplied connection string. Then you can use Postman or Jmeter to send POST/GET/PUT/DELETE calls to the application.
 
 ### 3.2 Jmeter
 
-To configure jmeter, set the ip address of the pets app in the `config` file. Then use docker to build the image: `docker build -t jmeter .`.
+To build the jmeter image, set the ip address of the pets app in the `jmeter-docker/scripts/config` file. Then use Docker to build the image: `docker build -t jmeter .`.
+
+When running this image, it will send POST/GET/PUT/DELETE calls in an infinite loop (at 300 threads) to the ip adress which was supplied in the config file.

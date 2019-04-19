@@ -177,7 +177,7 @@ To run this application locally, set the correct connection string in `pets-app/
 
     $ mvn spring-boot:run
 
-Alternatively, you can build an image to use in Docker or Kubernetes, set the correct connection string in `pets-app/src/main/resources/application.properties`. Use maven to package the application to a .jar file with `mvn package`. Then use Docker to build the image when maven is done packaging:
+Alternatively, you can build an image to use in Docker or Kubernetes. Set the correct connection string in `pets-app/src/main/resources/application.properties`. Use maven to package the application to a .jar file with `mvn package`. Then use Docker to build the image when maven is done packaging:
 
     $ docker build -t pets .
 
@@ -192,7 +192,7 @@ To run this Jmeter instance locally, go to `loadtesting/jmeter-docker/jmeter/bin
 
 The Jmeter script can be found at `loadtesting/jmeter-docker/jmeter/bin/restAPI.jmx`.
 
-Alternatively, you can build an image to use in Docker or Kubernetes, set the ip address of the pets app in the `jmeter-docker/scripts/config` file. Then use Docker to build the image:
+Alternatively, you can build an image to use in Docker or Kubernetes. Set the ip address of the pets app in the `jmeter-docker/scripts/config` file. Then use Docker to build the image:
 
     $ docker build -t jmeter .
 

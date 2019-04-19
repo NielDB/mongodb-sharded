@@ -1,3 +1,4 @@
 # Untracked files
 terraform/creds/*
+*.tfstate
 *.tfstate.*

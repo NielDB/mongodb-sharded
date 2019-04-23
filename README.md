@@ -26,9 +26,14 @@ Ensure the following dependencies are already fulfilled on your host Linux/Windo
 
 ### 1.2 Deployment
 
-To build the infrastructure, you can create your own Kubernetes cluster on GKE or use one of the included files: `terraform/gkecluster.tf` or `scripts/createCluster.sh`. Edit the one of the according files to your preferences.
+To build the infrastructure, you can create your own Kubernetes cluster on GKE or use one of the included files: `terraform/gkecluster.tf` or `scripts/createCluster.sh`. Edit one of the according files to your preferences.
 
 To use terraform, you should supply a Google Cloud service account key at `terraform/creds/serviceaccount.json`.
+
+Both scripts deploy the same infrastructure, a high available GKE cluster using:
+
+* x5 Nodes within the node pool `mongo-node-pool`
+* A scalable nodepool spread over 3 regions (default: europe-west1) using n1-standard-4 machines
 
 To provision the cluster, use a command-line terminal/shell and execute the following (first change the variables in the file "resources/config", if appropriate):
 

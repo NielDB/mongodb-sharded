@@ -34,8 +34,8 @@ To use terraform, you should supply a Google Cloud service account key at `terra
 
 Both scripts deploy the same infrastructure, a high available GKE cluster using:
 
-* x5 Nodes within the node pool `mongo-node-pool`
-* A scalable nodepool spread over 3 regions (default: europe-west1) using n1-standard-4 machines
+* x6 Nodes within the node pool `mongo-node-pool` (2 in each zone)
+* A scalable nodepool spread over 3 zones within a region (default: europe-west1) using n1-standard-4 machines
 
 To provision the cluster, use a command-line terminal/shell and execute the following (first change the variables in the file "resources/config", if appropriate):
 

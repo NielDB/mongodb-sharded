@@ -181,12 +181,13 @@ printf "\nTiller ready\n"
 
 
 # Install Prometheus Operator
-helm install -f ../resources/helm/prometheus-operator-chart.yaml stable/prometheus-operator --name prometheus-operator --namespace monitoring
+helm dependency update ../resources/helm/prometheus-operator
+helm install ../resources/helm/prometheus-operator --name prometheus-operator --namespace monitoring
 
 
 # Install MongoDB prometheus exporter
-helm install -f ../resources/helm/mongodb-exporter-chart.yaml --name prometheus-mongodb-exporter stable/prometheus-mongodb-exporter
-
+helm install ../resources/helm/prometheus-mongodb-exporter --name prometheus-mongodb-exporter
+kubectl create -f ../resources/helm/prometheus-mongodb-exporter/svcmonitor.yaml
 
 # Expose Grafana service
 kubectl patch svc prometheus-operator-grafana -p '{"spec": {"type": "LoadBalancer"}}' --namespace monitoring

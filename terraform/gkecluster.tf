@@ -6,9 +6,9 @@ provider "google" {
 
 
 resource "google_container_cluster" "gke-cluster" {
-  name               = "niel-mongo-gke-terraform"
+  name               = "mongo-gke-terraform"
   location           = "europe-west1"
-  initial_node_count = 5
+  initial_node_count = 1
 
   remove_default_node_pool = true
 
@@ -25,19 +25,18 @@ resource "google_container_cluster" "gke-cluster" {
 
 
 resource "google_container_node_pool" "primary_pool" {
-  name       = "worklark-node-pool"
+  name       = "mongo-node-pool"
   location   = "europe-west1"
   cluster    = "${google_container_cluster.gke-cluster.name}"
-  node_count = 5
+  node_count = 2
 
   node_config {
     machine_type = "n1-standard-4"
-   # disk_size_gb = 10         # Set the initial disk size
     preemptible  = true
   }
 
   autoscaling {
-    min_node_count = 5
+    min_node_count = 2
     max_node_count = 10
   }
 

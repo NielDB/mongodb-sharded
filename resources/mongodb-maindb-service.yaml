@@ -25,6 +25,12 @@ spec:
         role: mongodb-shardX
         tier: maindb
         replicaset: ShardXRepSet
+        chaosmonkey: "chaosmonkey"
+        kube-monkey/enabled: "enabled"
+        kube-monkey/identifier: "mongod-shardX"
+        kube-monkey/mtbf: '2'
+        kube-monkey/kill-mode: "fixed"
+        kube-monkey/kill-value: "1"
     spec:
       affinity:
         podAntiAffinity:

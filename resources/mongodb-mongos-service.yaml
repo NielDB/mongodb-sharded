@@ -26,6 +26,13 @@ spec:
         role: mongos-router
         tier: routers
         replicaset: routers
+        chaosmonkey: "chaosmonkey"
+        kube-monkey/enabled: "enabled"
+        kube-monkey/identifier: "mongos-router"
+        kube-monkey/mtbf: '2'
+        kube-monkey/kill-mode: "fixed"
+        kube-monkey/kill-value: "1"
+
     spec:
       affinity:
         podAntiAffinity:

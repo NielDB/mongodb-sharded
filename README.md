@@ -1,5 +1,7 @@
 # MongoDB Sharded Cluster for Kubernetes on GKE
 
+This project was based on [pkdone/gke-mongodb-shards-demo](https://github.com/pkdone/gke-mongodb-shards-demo).
+
 A project demonstrating the deployment of a MongoDB Sharded Cluster via Kubernetes on the Google Kubernetes Engine (GKE), using Kubernetes' feature StatefulSet. Contains example Kubernetes YAML resource files (in the 'resource' folder), Terraform infrastructure files (in the 'terraform' folder) and associated Kubernetes based Bash scripts (in the 'scripts' folder) to configure the environment and deploy a MongoDB Replica Set. There are also two projects to load test the cluster in the 'loadtesting' folder (explained in '3 Load Testing').
 
 For further background information on what these scripts and resource files do, plus general information about running MongoDB with Kubernetes, see: [http://k8smongodb.net/](http://k8smongodb.net/)
@@ -26,9 +28,14 @@ Ensure the following dependencies are already fulfilled on your host Linux/Windo
 
 ### 1.2 Deployment
 
-To build the infrastructure, you can create your own Kubernetes cluster on GKE or use one of the included files: `terraform/gkecluster.tf` or `scripts/createCluster.sh`. Edit the one of the according files to your preferences.
+To build the infrastructure, you can create your own Kubernetes cluster on GKE or use one of the included files: `terraform/gkecluster.tf` or `scripts/createCluster.sh`. Edit one of the according files to your preferences.
 
 To use terraform, you should supply a Google Cloud service account key at `terraform/creds/serviceaccount.json`.
+
+Both scripts deploy the same infrastructure, a high available GKE cluster using:
+
+* x5 Nodes within the node pool `mongo-node-pool`
+* A scalable nodepool spread over 3 regions (default: europe-west1) using n1-standard-4 machines
 
 To provision the cluster, use a command-line terminal/shell and execute the following (first change the variables in the file "resources/config", if appropriate):
 
@@ -173,8 +180,11 @@ The loadtesting folder contains 2 docker projects to help with load testing.
 
 ### 3.1 Pets
 
-To build the pets application, set the correct connection string in `pets-app/src/main/resources/application.properties`.
-Use maven to package the application to a .jar file with `mvn package`. Then use Docker to build the image when maven is done packaging:
+To run this application locally, set the correct connection string in `pets-app/src/main/resources/application.properties` Go to the main project directory and run:
+
+    $ mvn spring-boot:run
+
+Alternatively, you can build an image to use in Docker or Kubernetes. Set the correct connection string in `pets-app/src/main/resources/application.properties`. Use maven to package the application to a .jar file with `mvn package`. Then use Docker to build the image when maven is done packaging:
 
     $ docker build -t pets .
 
@@ -183,7 +193,13 @@ When running the application, it will connect to the database and collection tha
 
 ### 3.2 Jmeter
 
-To build the jmeter image, set the ip address of the pets app in the `jmeter-docker/scripts/config` file. Then use Docker to build the image:
+To run this Jmeter instance locally, go to `loadtesting/jmeter-docker/jmeter/bin` and run:
+
+    $ ./jmeter
+
+The Jmeter script can be found at `loadtesting/jmeter-docker/jmeter/bin/restAPI.jmx`.
+
+Alternatively, you can build an image to use in Docker or Kubernetes. Set the ip address of the pets app in the `jmeter-docker/scripts/config` file. Then use Docker to build the image:
 
     $ docker build -t jmeter .
 

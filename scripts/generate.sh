@@ -40,24 +40,22 @@ kubectl apply -f ../resources/mongodb-mongos-service.yaml
 # Wait until the final mongod of each Shard + the ConfigDB has started properly
 echo
 echo "Waiting for all the shards and configdb containers to come up (`date`)..."
-echo " (IGNORE any reported not found & connection errors)"
-sleep 30
-echo -n "  "
-until kubectl --v=0 exec mongod-configdb-2 -c mongod-configdb-container -- mongo --quiet --eval 'db.getMongo()'; do
+echo
+until kubectl --v=0 exec mongod-configdb-2 -c mongod-configdb-container -- mongo --quiet --eval 'db.getMongo()' 2> /dev/null; do
     sleep 5
-    echo -n "  "
+    echo -n "" > /dev/null
 done
 
 
 for ((rs=1; rs<=$SHARD_REPLICA_SET; rs++)) do
-  echo -n "  "
-  until kubectl --v=0 exec mongod-shard$rs-2 -c mongod-shard$rs-container -- mongo --quiet --eval 'db.getMongo()'; do
+  echo -n ""
+  until kubectl --v=0 exec mongod-shard$rs-2 -c mongod-shard$rs-container -- mongo --quiet --eval 'db.getMongo()' 2> /dev/null; do
       sleep 5
-      echo -n "  "
+      echo -n "" > /dev/null
   done
 done
 
-
+echo
 echo "...shards & configdb containers are now running (`date`)"
 echo
 
@@ -106,11 +104,10 @@ done
 
 # Wait for the mongos to have started properly
 echo "Waiting for the first mongos to come up (`date`)..."
-echo " (IGNORE any reported not found & connection errors)"
-echo -n "  "
-until kubectl --v=0 exec mongos-router-0 -c mongos-container -- mongo --quiet --eval 'db.getMongo()'; do
+echo ""
+until kubectl --v=0 exec mongos-router-0 -c mongos-container -- mongo --quiet --eval 'db.getMongo()' 2> /dev/null; do
     sleep 2
-    echo -n "  "
+    echo -n "" > /dev/null
 done
 echo "...first mongos is now running (`date`)"
 echo
@@ -144,9 +141,10 @@ echo
 
 # Create Mongodb-Prometheus-Exporter User
 kubectl exec mongos-router-0 -c mongos-container -- mongo --eval "db.getSiblingDB('admin').createUser({user: 'mongodb_exporter',pwd: 's3cr3tpassw0rd',roles:[{role:'clusterMonitor',db:'admin'},{ role: 'read', db: 'local' }],mechanisms:['SCRAM-SHA-1']})"
-
+echo
 
 # Install helm
+echo
 echo "installing helm"
 # installs helm with bash commands for easier command line integration
 curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
@@ -182,10 +180,14 @@ printf "\nTiller ready\n"
 
 # Install Prometheus Operator
 helm dependency update ../resources/helm/prometheus-operator
+echo
+echo
 helm install ../resources/helm/prometheus-operator --name prometheus-operator --namespace monitoring
 
 
 # Install MongoDB prometheus exporter
+echo
+echo
 helm install ../resources/helm/prometheus-mongodb-exporter --name prometheus-mongodb-exporter
 kubectl create -f ../resources/helm/prometheus-mongodb-exporter/svcmonitor.yaml
 
@@ -195,6 +197,8 @@ kubectl patch svc prometheus-operator-grafana -p '{"spec": {"type": "LoadBalance
 
 # Print Summary State
 kubectl get persistentvolumes
+echo
+echo
 echo
 kubectl get all 
 echo

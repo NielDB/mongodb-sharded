@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: prometheus-mongodb-exporter2
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: prometheus-mongodb-exporter2
+    helm.sh/chart: prometheus-mongodb-exporter-2.0.0
+    release: prometheus-operator
+  name: prometheus-mongodb-exporter2
+  namespace: ""
+  resourceVersion: ""
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/default/servicemonitors/prometheus-mongodb-exporter2
+  uid: ""
+spec:
+  endpoints:
+  - interval: 15s
+    port: metrics
+    scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+    - default
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: prometheus-mongodb-exporter2
+      app.kubernetes.io/name: prometheus-mongodb-exporter2

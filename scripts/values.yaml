@@ -3,17 +3,17 @@ affinity: {}
 annotations: {}
 
 extraArgs:
-- -collect.collection=true
-- -collect.database=true
-- -collect.indexusage=true
-- -collect.topmetrics=true
+- --collect.collection
+- --collect.database
+- --collect.indexusage
+- --collect.topmetrics
 
 fullnameOverride: ""
 
 image:
   pullPolicy: IfNotPresent
-  repository: ssalaues/mongodb-exporter
-  tag: 0.6.1
+  repository: ssheehy/mongodb-exporter
+  tag: 0.7.0
 
 imagePullSecrets: []
 
@@ -23,15 +23,19 @@ livenessProbe:
     port: metrics
   initialDelaySeconds: 10
 
-# mongodb://metrics-user:password@mongodb:27017
-# mongodb:
-#   uri: mongodb://mongodb_exporter:s3cr3tpassw0rd@mongos-router-service:27017
+# [mongodb://][user:pass@]host1[:port1][,host2[:port2],...][/database][?options]
 mongodb:
-  uri: mongodb://main_admin:abc123@35.240.25.36:27017/admin
+  uri: mongodb://mongodb_exporter:s3cr3tpassw0rd@mongos-router-service:27017
 
 nameOverride: ""
 
 nodeSelector: {}
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "metrics"
+
+port: "9216"
 
 priorityClassName: ""
 
@@ -45,10 +49,10 @@ replicas: 1
 
 resources: {}
 # limits:
-#   cpu: 250mm
+#   cpu: 250m
 #   memory: 192Mi
 # requests:
-#   cpu: 100mm
+#   cpu: 100m
 #   memory: 128Mi
 
 # Extra environment variables that will be passed into the exporter pod
@@ -59,19 +63,13 @@ securityContext:
   capabilities:
     drop: ["all"]
   readOnlyRootFilesystem: true
+  runAsGroup: 10000
   runAsNonRoot: true
   runAsUser: 10000
 
-service:
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "9216"
-  port: 9216
-  type: ClusterIP
-
 serviceMonitor:
   enabled: false
-  interval: 15s
+  interval: 30s
   scrapeTimeout: 10s
   namespace:
   additionalLabels: {}
